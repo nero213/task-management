@@ -155,10 +155,10 @@ export default function HomePage() {
         {/* Loading */}
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-20 font-mono text-xs uppercase tracking-widest text-ink-faint">
-            {/* <span>Printing</span>
+            <span>Printing</span>
             <span className="dot">.</span>
             <span className="dot">.</span>
-            <span className="dot">.</span> */}
+            <span className="dot">.</span>
           </div>
         ) : tasks.length === 0 ? (
           <div className="rounded-md border border-dashed border-line py-16 text-center">

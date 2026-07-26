@@ -20,17 +20,18 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+## Vercel Deployment Live URL
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+https://task-management-coral-xi.vercel.app/
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+![website](./images/image.png)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Documentation
 
-## Deploy on Vercel
+A core architectural decision was organizing the application logic into a modular service layer located within `services/tasks/`. Rather than embedding direct API calls or Supabase database client queries directly inside React components, each operation (Read, Create, and Update) is encapsulated into its own dedicated async function (`getTasks`, `addTask`, `updateTask`). This isolation keeps our client-side React components lean, highly readable, and solely focused on managing UI states and user interactions. Furthermore, exporting these module functions via a central index file `(services/tasks/index.ts)` provides a clean public API surface that simplifies future refactoring, unit testing, and maintainability.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+To maintain runtime and compile-time reliability across the application, strict TypeScript typings were established in `types/database.ts`. Defining explicit interface contracts and custom union types—such as `TaskStatus` for PostgreSQL enum alignment—guarantees that state transformations and database mutations strictly adhere to expected schemas. For the presentation layer, standardizing on Tailwind CSS allowed us to eliminate bulky inline styles and redundant custom CSS files in favor of utility-first styling. This design approach ensures responsive layouts, consistent color tokens, immediate visual feedback (such as inline status changes and disabled button states during async operations), and optimal production bundle sizes.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+To accelerate the implementation lifecycle and ensure deployment readiness, AI pairing tools were heavily leveraged throughout the design and execution phases. AI assistance was utilized to rapidly prototype, enforce consistency in TypeScript interface structures, and generate optimized utility patterns. Crucially, during integration, AI-driven diagnostics helped quickly identify and resolve schema misalignment issues between the client application and PostgreSQL database enums, drastically reducing debugging overhead.
