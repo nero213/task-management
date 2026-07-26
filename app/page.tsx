@@ -1,7 +1,8 @@
+// app/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { getTasks, addTask, updateTask } from "@/services/tasks";
+import { addTask, getTasks, updateTask } from "@/services/tasks";
 import { Task, TaskStatus } from "@/types/database";
 
 export default function HomePage() {
@@ -11,7 +12,6 @@ export default function HomePage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Form State
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
@@ -51,15 +51,15 @@ export default function HomePage() {
     }
   }
 
-  async function handleStatusChange(id: string, newStatus: TaskStatus) {
+  async function handleStatusChange(id: string, status: TaskStatus) {
     try {
       setUpdatingId(id);
-      setErrorMsg(null);
-
-      const updated = await updateTask(id, { status: newStatus });
+      const updated = await updateTask(id, { status });
 
       setTasks((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, status: updated.status } : t)),
+        prev.map((task) =>
+          task.id === id ? { ...task, status: updated.status } : task,
+        ),
       );
     } catch (err: any) {
       setErrorMsg(err.message);
@@ -68,100 +68,178 @@ export default function HomePage() {
     }
   }
 
+  function statusMeta(status: TaskStatus) {
+    switch (status) {
+      case "todo":
+        return { label: "Open", color: "var(--status-open)" };
+      case "in_progress":
+        return { label: "Active", color: "var(--status-active)" };
+      case "done":
+        return { label: "Done", color: "var(--status-closed)" };
+    }
+  }
+
+  const counts = {
+    open: tasks.filter((t) => t.status === "todo").length,
+    active: tasks.filter((t) => t.status === "in_progress").length,
+    closed: tasks.filter((t) => t.status === "done").length,
+  };
+
   return (
-    <div className="mx-auto my-10 max-w-[600px] p-5 font-sans">
-      <h1 className="mb-2 text-3xl font-bold tracking-tight text-slate-900">
-        Task Manager
-      </h1>
-      <p className="mb-6 text-slate-500">Read, Create, and Update Operations</p>
+    <main className="min-h-screen px-6 py-14">
+      <div className="mx-auto max-w-3xl">
+        {/* Masthead */}
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
+          <div>
+            <p className="mb-2 font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">
+              Dispatch Log
+            </p>
+            <h1 className="font-display text-4xl font-semibold tracking-tight text-ink">
+              Task Manager
+            </h1>
+          </div>
 
-      {/* Add Task Form */}
-      <form
-        onSubmit={handleCreate}
-        className="mb-8 flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4"
-      >
-        <h3 className="m-0 text-base font-semibold text-slate-900">
-          Add New Task
-        </h3>
-
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Task title (required)"
-          required
-          className="rounded-md border border-slate-300 p-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
-        />
-
-        <input
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Task description (optional)"
-          className="rounded-md border border-slate-300 p-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
-        />
-
-        <button
-          type="submit"
-          disabled={submitting || !title.trim()}
-          className="self-start rounded-md bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-        >
-          {submitting ? "Adding..." : "Add Task"}
-        </button>
-      </form>
-
-      {errorMsg && (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-2.5 text-red-800">
-          {errorMsg}
+          <div className="flex gap-4 font-mono text-xs uppercase tracking-wider text-ink-dim">
+            <span>
+              <span className="text-ink">{counts.open}</span> Open
+            </span>
+            <span style={{ color: "var(--status-active)" }}>
+              {counts.active} Active
+            </span>
+            <span>
+              <span className="text-ink">{counts.closed}</span> Closed
+            </span>
+          </div>
         </div>
-      )}
 
-      {/* Task List */}
-      {loading ? (
-        <p className="text-slate-500">Loading tasks...</p>
-      ) : tasks.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-white bg-slate-50 p-6 text-center">
-          <p className="m-0 text-slate-500">
-            No tasks found. Use the form above to create one!
+        {/* Intake form */}
+        <div className="mb-10 rounded-md border border-line bg-panel p-6">
+          <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
+            New Ticket
           </p>
-        </div>
-      ) : (
-        <ul className="m-0 list-none space-y-2 p-0">
-          {tasks.map((task) => (
-            <li
-              key={task.id}
-              className="flex items-center justify-between gap-4 rounded-md border border-slate-200 p-3"
-            >
-              <div className="min-w-0 flex-1">
-                <strong
-                  className={`font-semibold text-white ${
-                    task.status === "done" ? "line-through text-white" : ""
-                  }`}
-                >
-                  {task.title}
-                </strong>
-                {task.description && (
-                  <p className="mt-1 text-sm text-white">{task.description}</p>
-                )}
-              </div>
 
-              {/* Status Select Dropdown */}
-              <select
-                value={task.status}
-                disabled={updatingId === task.id}
-                onChange={(e) =>
-                  handleStatusChange(task.id, e.target.value as TaskStatus)
-                }
-                className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm focus:border-slate-500 focus:outline-none disabled:opacity-50"
-              >
-                <option value="todo">Todo</option>
-                <option value="in_progress">In Progress</option>
-                <option value="done">Done</option>
-              </select>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <input
+              type="text"
+              placeholder="What needs doing?"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              className="w-full border-b border-line bg-transparent px-1 py-2 text-ink placeholder:text-ink-faint outline-none transition focus:border-[var(--status-active)]"
+            />
+
+            <textarea
+              rows={3}
+              placeholder="Notes (optional)..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full resize-none border-b border-line bg-transparent px-1 py-2 text-sm text-ink placeholder:text-ink-faint outline-none transition focus:border-[var(--status-active)]"
+            />
+
+            <button
+              disabled={!title.trim() || submitting}
+              className="rounded-sm border border-line px-5 py-2 font-mono text-xs uppercase tracking-wider text-ink transition hover:border-[var(--status-active)] hover:text-[var(--status-active)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {submitting ? "Filing…" : "Create"}
+            </button>
+          </form>
+        </div>
+
+        {/* Error */}
+        {errorMsg && (
+          <div className="mb-8 border-l-2 border-red-500 bg-panel px-4 py-3 font-mono text-xs text-red-400">
+            {errorMsg}
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-20 font-mono text-xs uppercase tracking-widest text-ink-faint">
+            {/* <span>Printing</span>
+            <span className="dot">.</span>
+            <span className="dot">.</span>
+            <span className="dot">.</span> */}
+          </div>
+        ) : tasks.length === 0 ? (
+          <div className="rounded-md border border-dashed border-line py-16 text-center">
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
+              — No Open Tickets —
+            </p>
+            <p className="mt-2 text-sm text-ink-dim">
+              File one above to get started.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {tasks.map((task, index) => {
+              const meta = statusMeta(task.status);
+
+              return (
+                <div
+                  key={task.id}
+                  className="ticket rounded-md border border-line bg-panel py-5 pr-5 transition hover:border-ink-faint hover:bg-panel-raised"
+                >
+                  <span className="ticket-notch ticket-notch--top" />
+                  <span className="ticket-notch ticket-notch--bottom" />
+
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="flex-1">
+                      <p className="mb-1 font-mono text-[0.65rem] tracking-wider text-ink-faint">
+                        No. {String(index + 1).padStart(3, "0")}
+                      </p>
+
+                      <h3
+                        className={`text-lg font-medium ${
+                          task.status === "done"
+                            ? "text-ink-faint line-through"
+                            : "text-ink"
+                        }`}
+                      >
+                        {task.title}
+                      </h3>
+
+                      {task.description && (
+                        <p
+                          className={`mt-1 text-sm leading-6 ${
+                            task.status === "done"
+                              ? "text-ink-faint"
+                              : "text-ink-dim"
+                          }`}
+                        >
+                          {task.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="stamp" style={{ color: meta?.color }}>
+                        <span className="stamp-dot" />
+                        {meta?.label}
+                      </span>
+
+                      <select
+                        value={task.status}
+                        disabled={updatingId === task.id}
+                        onChange={(e) =>
+                          handleStatusChange(
+                            task.id,
+                            e.target.value as TaskStatus,
+                          )
+                        }
+                        className="rounded-sm border border-line bg-panel px-3 py-1.5 font-mono text-xs text-ink outline-none transition hover:border-ink-faint focus:border-[var(--status-active)] disabled:opacity-50"
+                      >
+                        <option value="todo">Open</option>
+                        <option value="in_progress">Active</option>
+                        <option value="done">Done</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </main>
   );
 }

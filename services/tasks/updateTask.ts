@@ -1,5 +1,5 @@
 import { createClient } from "@/libs/supabase/client";
-import { Task, TaskStatus } from "@/types/database";
+import { Task } from "@/types/database";
 
 /**
  * Updates specific fields of an existing task in Supabase.
